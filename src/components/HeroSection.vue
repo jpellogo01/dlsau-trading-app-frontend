@@ -50,7 +50,7 @@ const handlePost = () => navigateTo("post");
       >
         Campus <span class="text-[#00733F]">Trading</span><br />
         <span class="relative inline-block mt-2">
-          Redefined.
+          DLSAU.
           <svg
             class="absolute -bottom-2 left-0 w-full"
             viewBox="0 0 358 12"

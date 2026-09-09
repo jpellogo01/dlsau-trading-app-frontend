@@ -100,9 +100,10 @@
                   >
                     <option value="">General</option>
                     <option value="Academic">Academic Gear</option>
+                    <option value="Academic">School Supplies</option>
                     <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion/Uniforms</option>
-                  </select>
+                    <option value="Fashion">Fashion/Uniforms</option></select
+                  >cd
                 </div>
                 <div>
                   <label
@@ -173,6 +174,7 @@
                   required
                 >
                   <option value="SELL">Sell Only</option>
+                  <option value="SELL">For Donation</option>
                   <option value="TRADE">Trade Only</option>
                   <option value="BOTH">Both</option>
                 </select>
