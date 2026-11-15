@@ -163,38 +163,6 @@
                   />
                 </div>
               </div>
-              <div>
-                <label
-                  class="block text-[11px] font-black uppercase text-slate-400 mb-2 ml-1"
-                  >Preference</label
-                >
-                <select
-                  v-model="form.tradeOption"
-                  class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 focus:bg-white focus:border-[#00733F] outline-none transition-all font-bold"
-                  required
-                >
-                  <option value="SELL">Sell Only</option>
-                  <option value="SELL">For Donation</option>
-                  <option value="TRADE">Trade Only</option>
-                  <option value="BOTH">Both</option>
-                </select>
-              </div>
-              <div class="relative">
-                <label
-                  class="block text-[11px] font-black uppercase text-slate-400 mb-2 ml-1"
-                  >Asking Price (Optional)</label
-                >
-                <span
-                  class="absolute left-5 bottom-[18px] font-bold text-slate-400"
-                  >₱</span
-                >
-                <input
-                  v-model.number="form.price"
-                  type="number"
-                  placeholder="0.00"
-                  class="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl pl-10 pr-5 py-4 focus:bg-white focus:border-[#00733F] outline-none transition-all font-bold"
-                />
-              </div>
             </div>
           </section>
         </div>
@@ -310,9 +278,6 @@ const form = reactive({
   title: "",
   description: "",
   category: "",
-  price: null as number | null,
-  isNegotiable: false,
-  tradeOption: "BOTH",
   condition: "",
   meetupLocation: "",
 });
@@ -326,7 +291,6 @@ const errorMessage = ref("");
 const isFormValid = computed(() => {
   return (
     form.title.trim() &&
-    form.tradeOption &&
     form.condition &&
     thumbnailFile.value
   );
@@ -384,7 +348,6 @@ const resetForm = () => {
     title: "",
     description: "",
     category: "",
-    price: null,
     condition: "",
     meetupLocation: "",
   });

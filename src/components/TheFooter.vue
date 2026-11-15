@@ -14,7 +14,7 @@
             </div>
           </div>
           <p class="text-slate-500 text-sm leading-relaxed max-w-xs font-medium">
-            The exclusive marketplace for De La Salle Araneta University students. Trade, sell, and connect safely within your campus.
+            The exclusive marketplace for De La Salle Araneta University students. Trade and connect safely within your campus.
           </p>
           <div class="flex items-center gap-4">
             <a v-for="icon in socialIcons" :key="icon.name" href="#" class="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-[#00733F] hover:text-white transition-all duration-300">

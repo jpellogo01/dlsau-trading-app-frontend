@@ -1,3 +1,5 @@
+export type ItemStatus = "AVAILABLE" | "TRADED";
+
 export interface ItemImage {
   id: number;
   imageUrl: string;
@@ -16,6 +18,11 @@ export interface Comment {
   username: string;
   content: string;
   createdAt: string;
+  /** Top-level comment this reply belongs to; null/undefined for top-level comments. */
+  parentId?: number | null;
+  /** Person being replied to (shown as @username). */
+  replyToUserId?: number | null;
+  replyToUsername?: string | null;
 }
 
 export interface Item {
@@ -23,13 +30,11 @@ export interface Item {
   title: string;
   description?: string;
   category?: string;
-  price?: number;
-  isNegotiable: boolean;
-  tradeOption: "SELL" | "TRADE" | "BOTH";
   condition: "NEW" | "LIKE_NEW" | "USED" | "DAMAGED";
   meetupLocation?: string;
   thumbnailUrl?: string;
-  status: "AVAILABLE" | "RESERVED" | "SOLD";
+  status: ItemStatus;
+  tradedWithUserId?: number | null;
   likes?: number; // Backend optional, 0 default
   isLiked?: boolean; // Optional legacy field used by other components
   comments?: Comment[]; // Backend optional

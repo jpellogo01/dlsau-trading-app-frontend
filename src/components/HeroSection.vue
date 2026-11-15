@@ -70,7 +70,7 @@ const handlePost = () => navigateTo("post");
       <p
         class="max-w-2xl mx-auto text-lg md:text-xl text-slate-600 font-medium leading-relaxed mb-12"
       >
-        The official marketplace for the Lasallian community. Securely trade
+        The official trading place for the Lasallian community. Securely trade
         <span class="text-[#00733F] font-bold">textbooks</span>,
         <span class="text-[#00733F] font-bold">uniforms</span>, and
         <span class="text-[#00733F] font-bold">essentials</span> with verified

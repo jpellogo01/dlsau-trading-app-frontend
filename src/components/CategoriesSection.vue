@@ -20,7 +20,7 @@ defineProps<{
           Popular Categories
         </h2>
         <p class="text-2xl text-[#64748B] font-normal max-w-2xl mx-auto">
-          What DLSAU students are buying & selling right now
+          What DLSAU students are trading right now
         </p>
       </div>
       <div

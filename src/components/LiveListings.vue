@@ -97,10 +97,15 @@
               >
                 <span
                   class="text-xs font-bold text-slate-400 uppercase tracking-tighter"
-                  >Current Price</span
+                  >Status</span
                 >
-                <span class="text-xl font-black text-[#00733F]">
-                  {{ item.price ? `₱${item.price.toLocaleString()}` : "FREE" }}
+                <span
+                  class="text-xl font-black"
+                  :class="
+                    item.status === 'TRADED' ? 'text-slate-500' : 'text-[#00733F]'
+                  "
+                >
+                  {{ item.status === "TRADED" ? "TRADED" : "AVAILABLE" }}
                 </span>
               </div>
             </div>
@@ -131,7 +136,7 @@
                 <div class="flex flex-col">
                   <span
                     class="text-[10px] font-black text-slate-400 uppercase tracking-tighter leading-none mb-0.5"
-                    >Seller</span
+                    >Posted by</span
                   >
                   <span class="text-xs font-bold text-slate-800 leading-none">{{
                     item.user.username

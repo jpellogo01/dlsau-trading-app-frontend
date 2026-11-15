@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useChatStore } from "@/stores/chat";
 import { getItems } from "@/api/items";
 import Login from "./Login.vue";
 import Register from "./Register.vue";
@@ -23,11 +24,15 @@ import {
   Smartphone,
   Heart as HeartIcon,
   Package as PackageIcon,
+  LogIn,
+  MessagesSquare,
 } from "lucide-vue-next";
+import NotificationBell from "@/components/NotificationBell.vue";
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
+const chatStore = useChatStore();
 
 const isLoginModalOpen = ref(false);
 const isRegisterModalOpen = ref(false);
@@ -135,17 +140,23 @@ function formatDate(dateString: string) {
   });
 }
 
-function handleQuickAction(item: Item, action: string) {
+async function handleQuickAction(item: Item, action: string) {
   if (!authStore.isAuthenticated) {
     openLoginModal();
     return;
   }
 
   if (action === "contact") {
-    const sellerInfo = `${item.user.username} (${item.user.email})`;
-    navigator.clipboard.writeText(sellerInfo).then(() => {
-      alert(`Copied: ${sellerInfo}\nCheck your mailto!`);
-    });
+    if (item.user?.id === authStore.user?.id) {
+      router.push({ name: "Chats" });
+      return;
+    }
+    try {
+      const conversation = await chatStore.startWithItem(item.id);
+      router.push({ name: "Chats", params: { id: conversation.id } });
+    } catch (e: any) {
+      alert(e?.message || "Could not open chat.");
+    }
   } else if (action === "like") {
     alert("Liked & Saved! (Syncing...)");
   }
@@ -187,6 +198,22 @@ function handleQuickAction(item: Item, action: string) {
             </div>
 
             <div class="hidden md:flex items-center gap-6">
+              <div v-if="authStore.isAuthenticated" class="flex items-center gap-2">
+                <NotificationBell />
+                <button
+                  @click="router.push({ name: 'Chats' })"
+                  class="relative flex items-center gap-2 px-4 py-3 bg-white/50 border border-black/10 rounded-full text-[#333] font-semibold transition-all hover:bg-white hover:shadow-lg"
+                  aria-label="Open chats"
+                >
+                  <MessagesSquare class="w-5 h-5" />
+                  <span>Chats</span>
+                  <span
+                    v-if="chatStore.unreadTotal"
+                    class="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[#ff8c42] text-white text-[11px] font-bold flex items-center justify-center shadow"
+                    >{{ chatStore.unreadTotal }}</span
+                  >
+                </button>
+              </div>
               <button
                 v-if="authStore.isAuthenticated"
                 @click="navigateToProfile"
@@ -237,9 +264,36 @@ function handleQuickAction(item: Item, action: string) {
               </button>
             </div>
 
-            <div class="md:hidden">
-              <button class="p-2 text-[#00733F]">
-                <Menu class="w-7 h-7" />
+            <!-- Mobile: bell, chats and account (the old menu button did nothing) -->
+            <div class="md:hidden flex items-center gap-2">
+              <template v-if="authStore.isAuthenticated">
+                <NotificationBell />
+                <button
+                  @click="router.push({ name: 'Chats' })"
+                  class="relative p-2.5 bg-white/50 border border-black/10 rounded-full text-[#333]"
+                  aria-label="Open chats"
+                >
+                  <MessagesSquare class="w-5 h-5" />
+                  <span
+                    v-if="chatStore.unreadTotal"
+                    class="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[#ff8c42] text-white text-[11px] font-bold flex items-center justify-center shadow"
+                    >{{ chatStore.unreadTotal }}</span
+                  >
+                </button>
+                <button
+                  @click="navigateToProfile"
+                  class="w-10 h-10 rounded-full bg-gradient-to-tr from-[#00733F] to-[#A7D49B] flex items-center justify-center text-white shadow"
+                  aria-label="My account"
+                >
+                  <User class="w-5 h-5" />
+                </button>
+              </template>
+              <button
+                v-else
+                @click="openLoginModal"
+                class="flex items-center gap-1.5 px-4 py-2.5 bg-[#00733F] text-white rounded-xl font-bold text-sm shadow"
+              >
+                <LogIn class="w-4 h-4" /> Sign In
               </button>
             </div>
           </div>

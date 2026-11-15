@@ -12,6 +12,7 @@
     "format": "oxfmt src/"
   },
   "dependencies": {
+    "@stomp/stompjs": "^7.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.7.7",
     "lucide-vue-next": "^1.0.0",

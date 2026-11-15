@@ -1,6 +1,6 @@
 import type { Comment, Item } from "../types/item";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081";
+import { API_URL } from "./config";
 
 export async function postItem(
   formData: FormData,
@@ -116,10 +116,12 @@ export async function getComments(
   return response.json();
 }
 
+/** Post a comment, or a reply when parentId (the comment being replied to) is given. */
 export async function postComment(
   itemId: number,
   content: string,
   token: string,
+  parentId?: number | null,
 ): Promise<Comment> {
   const response = await fetch(`${API_URL}/api/v1/items/${itemId}/comments`, {
     method: "POST",
@@ -127,7 +129,7 @@ export async function postComment(
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, parentId: parentId ?? null }),
   });
 
   if (!response.ok) {
@@ -172,4 +174,83 @@ export async function deleteComment(
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
+}
+
+// ------------------------------------------------------------ My Posts (owner only)
+
+export interface MyPost {
+  id: number;
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  condition: Item["condition"];
+  meetupLocation?: string | null;
+  thumbnailUrl?: string | null;
+  status: Item["status"];
+  tradedWithUserId?: number | null;
+  tradedWithUsername?: string | null;
+  tradedAt?: string | null;
+  createdAt: string;
+  commentCount: number;
+  likeCount: number;
+  chatCount: number;
+}
+
+export interface UpdatePostRequest {
+  title: string;
+  description?: string | null;
+  category?: string | null;
+  condition: Item["condition"];
+  meetupLocation?: string | null;
+}
+
+async function ownerRequest<T>(
+  path: string,
+  token: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const response = await fetch(`${API_URL}/api/v1${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
+    },
+  });
+  if (!response.ok) {
+    let message = `HTTP ${response.status}: ${response.statusText}`;
+    try {
+      const data = await response.json();
+      message = data?.message || data?.error || message;
+    } catch {
+      /* not JSON */
+    }
+    throw new Error(message);
+  }
+  return response.status === 204 ? (undefined as T) : response.json();
+}
+
+export function getMyPosts(token: string) {
+  return ownerRequest<MyPost[]>("/items/mine", token);
+}
+
+export function updatePost(id: number, data: UpdatePostRequest, token: string) {
+  return ownerRequest<MyPost>(`/items/${id}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updatePostStatus(
+  id: number,
+  status: Item["status"],
+  token: string,
+) {
+  return ownerRequest<MyPost>(`/items/${id}/status`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function deletePost(id: number, token: string) {
+  return ownerRequest<void>(`/items/${id}`, token, { method: "DELETE" });
 }

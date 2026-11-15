@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { defineStore, acceptHMRUpdate } from "pinia";
 import { ref, computed } from "vue";
 import authService from "@/api/auth";
 import type {
@@ -50,7 +50,7 @@ export const useAuthStore = defineStore("auth", () => {
       authService.setToken(response.token);
       return response;
     } catch (err: any) {
-      error.value = err.response?.data?.message || "Login failed";
+      error.value = err.response?.data?.message || err.response?.data?.error || "Login failed";
       throw err;
     } finally {
       isLoading.value = false;
@@ -66,7 +66,7 @@ export const useAuthStore = defineStore("auth", () => {
       // Store the OTP for display (in real app, OTP would be sent via email)
       return response;
     } catch (err: any) {
-      error.value = err.response?.data?.message || "Registration failed";
+      error.value = err.response?.data?.message || err.response?.data?.error || "Registration failed";
       throw err;
     } finally {
       isLoading.value = false;
@@ -93,7 +93,7 @@ export const useAuthStore = defineStore("auth", () => {
       registrationEmail.value = null;
       return response;
     } catch (err: any) {
-      error.value = err.response?.data?.message || "OTP verification failed";
+      error.value = err.response?.data?.message || err.response?.data?.error || "OTP verification failed";
       throw err;
     } finally {
       isLoading.value = false;
@@ -107,7 +107,7 @@ export const useAuthStore = defineStore("auth", () => {
       const response = await authService.resendOTP(email);
       return response;
     } catch (err: any) {
-      error.value = err.response?.data?.message || "Failed to resend OTP";
+      error.value = err.response?.data?.message || err.response?.data?.error || "Failed to resend OTP";
       throw err;
     } finally {
       isLoading.value = false;
@@ -122,7 +122,7 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = profile;
       return profile;
     } catch (err: any) {
-      error.value = err.response?.data?.message || "Failed to fetch profile";
+      error.value = err.response?.data?.message || err.response?.data?.error || "Failed to fetch profile";
       throw err;
     } finally {
       isLoading.value = false;
@@ -141,7 +141,7 @@ export const useAuthStore = defineStore("auth", () => {
       user.value = updated;
       return updated;
     } catch (err: any) {
-      error.value = err.response?.data?.message || "Failed to update profile";
+      error.value = err.response?.data?.message || err.response?.data?.error || "Failed to update profile";
       throw err;
     } finally {
       isLoading.value = false;
@@ -179,3 +179,8 @@ export const useAuthStore = defineStore("auth", () => {
     initializeAuth,
   };
 });
+
+// Let the dev server hot-swap this store when the file changes (no stale actions).
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useAuthStore, import.meta.hot));
+}

@@ -31,7 +31,23 @@
             </h1>
           </div>
 
-          <!-- Right Section - Post Button -->
+          <!-- Right Section - Notifications + Chats + Post Button -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+          <NotificationBell v-if="authStore.isAuthenticated" />
+          <button
+            v-if="authStore.isAuthenticated"
+            @click="$router.push({ name: 'Chats' })"
+            class="relative flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-3 bg-white/50 border border-black/10 rounded-full text-[#333] font-semibold text-sm sm:text-base transition-all hover:bg-white hover:shadow-lg"
+            aria-label="Open chats"
+          >
+            <MessagesSquare class="w-4 h-4 sm:w-5 sm:h-5" />
+            <span class="hidden md:inline">Chats</span>
+            <span
+              v-if="chatStore.unreadTotal"
+              class="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-[#ff8c42] text-white text-[11px] font-bold flex items-center justify-center shadow"
+              >{{ chatStore.unreadTotal }}</span
+            >
+          </button>
           <button
             @click="
               authStore.isAuthenticated
@@ -43,6 +59,17 @@
             <PlusCircle class="w-4 h-4 sm:w-5 sm:h-5" />
             <span class="hidden sm:inline">Post Item</span>
           </button>
+          <!-- Profile -->
+          <button
+            v-if="authStore.isAuthenticated"
+            @click="$router.push({ name: 'Profile' })"
+            class="w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-tr from-white to-[#a7d49b] border-2 border-white/70 text-[#00733f] font-black text-sm sm:text-lg flex items-center justify-center shadow transition-all hover:shadow-lg hover:scale-105 flex-shrink-0"
+            :title="`My account (${authStore.user?.username || ''})`"
+            aria-label="My account"
+          >
+            {{ profileInitial }}
+          </button>
+          </div>
         </div>
       </div>
     </header>
@@ -113,13 +140,13 @@
           "
           class="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-[#ffd700] to-[#ff8c42] text-[#333] font-bold rounded-2xl transition-all hover:-translate-y-0.5 hover:shadow-lg text-base sm:text-lg"
         >
-          Start Selling
+          Start Trading
         </button>
       </div>
 
       <!-- Items Feed -->
       <div v-else class="flex flex-col gap-4 sm:gap-6">
-        <div v-for="item in items" :key="item.id" class="animate-fade-in-up">
+        <div v-for="item in items" :key="item.id" :id="`item-${item.id}`" class="animate-fade-in-up">
           <div
             class="bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-slate-200 transition-all hover:shadow-2xl hover:-translate-y-1"
           >
@@ -149,6 +176,15 @@
 
                 <div class="flex flex-wrap gap-1.5 sm:gap-2">
                   <span
+                    :class="[
+                      'px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wide shadow-md',
+                      statusOf(item) === 'TRADED'
+                        ? 'bg-slate-700 text-white'
+                        : 'bg-[#a7d49b]/40 text-[#00733f]',
+                    ]"
+                    >{{ statusOf(item) === "TRADED" ? "Traded" : "Available" }}</span
+                  >
+                  <span
                     class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-[#00733f] to-[#a7d49b] text-white shadow-md"
                     >{{ item.condition }}</span
                   >
@@ -156,11 +192,6 @@
                     v-if="item.category"
                     class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold bg-gray-100 text-[#333] shadow-sm"
                     >{{ item.category }}</span
-                  >
-                  <span
-                    v-if="item.isNegotiable"
-                    class="px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-[#ff8c42] to-[#ffd700] text-[#333] shadow-md"
-                    >Price Negotiable</span
                   >
                 </div>
               </div>
@@ -175,7 +206,7 @@
                     <p
                       class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1"
                     >
-                      Seller
+                      Posted by
                     </p>
                     <div class="flex items-center gap-2 sm:gap-3">
                       <div
@@ -192,18 +223,6 @@
                         </p>
                       </div>
                     </div>
-                  </div>
-                  <div class="text-left sm:text-right">
-                    <p
-                      class="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-[#ffd700] to-[#ff8c42] bg-clip-text text-transparent"
-                    >
-                      {{
-                        item.price ? `₱${item.price.toLocaleString()}` : "Free"
-                      }}
-                    </p>
-                    <p class="text-xs text-slate-500 uppercase tracking-wider">
-                      Cash or {{ item.tradeOption.toLowerCase() }}
-                    </p>
                   </div>
                 </div>
 
@@ -228,10 +247,10 @@
                       <p
                         class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1"
                       >
-                        Trade Type
+                        Meetup
                       </p>
                       <p class="text-base sm:text-lg font-black text-[#00733f]">
-                        {{ item.tradeOption }}
+                        {{ item.meetupLocation || "To be arranged" }}
                       </p>
                     </div>
                     <div
@@ -281,12 +300,35 @@
                       >
                     </button>
                   </div>
+                  <div
+                    v-if="isOwnItem(item)"
+                    class="px-4 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border-2 border-dashed border-slate-200 text-center text-sm font-bold text-slate-500"
+                  >
+                    This is your listing — offers arrive in
+                    <button
+                      class="text-[#00733f] underline"
+                      @click="$router.push({ name: 'Chats' })"
+                    >
+                      Chats
+                    </button>
+                  </div>
                   <button
-                    @click="contactSeller(item)"
-                    class="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#00733f] to-[#a7d49b] text-white font-black text-sm sm:text-base rounded-xl sm:rounded-2xl transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-xl uppercase tracking-wider"
+                    v-else
+                    @click="messageOwner(item)"
+                    :disabled="
+                      statusOf(item) === 'TRADED' ||
+                      startingChatItemId === item.id
+                    "
+                    class="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#00733f] to-[#a7d49b] text-white font-black text-sm sm:text-base rounded-xl sm:rounded-2xl transition-all flex items-center justify-center gap-2 enabled:hover:-translate-y-0.5 enabled:hover:scale-[1.01] enabled:hover:shadow-xl uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send class="w-4 h-4 sm:w-5 sm:h-5" />
-                    <span>Contact Seller Now</span>
+                    <span>{{
+                      statusOf(item) === "TRADED"
+                        ? "Already Traded"
+                        : startingChatItemId === item.id
+                          ? "Opening chat…"
+                          : "Message Owner"
+                    }}</span>
                   </button>
                 </div>
               </div>
@@ -299,79 +341,213 @@
                 class="border-t border-slate-200 bg-gradient-to-b from-slate-50 to-gray-100"
               >
                 <div class="p-4 sm:p-6 lg:p-8">
-                  <!-- Comments List -->
+                  <!-- Comments List (Facebook-style threads: comment + replies) -->
                   <div class="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
                     <div
-                      v-for="comment in item.comments"
+                      v-for="comment in topLevelComments(item)"
                       :key="comment.id"
-                      class="flex gap-2 sm:gap-3 p-3 sm:p-4 bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl border border-slate-200/50"
+                      class="flex flex-col gap-2"
                     >
+                      <!-- Top-level comment -->
                       <div
-                        class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-500/10 to-gray-500/20 rounded-xl flex items-center justify-center flex-shrink-0"
+                        :id="`comment-${comment.id}`"
+                        class="flex gap-2 sm:gap-3 p-3 sm:p-4 bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl border transition-all duration-500"
+                        :class="
+                          highlightCommentId === comment.id
+                            ? 'border-[#00733f] ring-4 ring-[#00733f]/20'
+                            : 'border-slate-200/50'
+                        "
                       >
-                        <User class="w-3 h-3 sm:w-4 sm:h-4 text-slate-500" />
-                      </div>
-                      <div class="flex-1 min-w-0">
                         <div
-                          class="flex flex-wrap items-center justify-between gap-2 mb-1"
+                          class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-gray-500/10 to-gray-500/20 rounded-xl flex items-center justify-center flex-shrink-0"
                         >
-                          <div
-                            class="flex flex-wrap items-center gap-1 sm:gap-2"
-                          >
-                            <p
-                              class="font-bold text-[#333] text-sm sm:text-base truncate"
-                            >
+                          <User class="w-3 h-3 sm:w-4 sm:h-4 text-slate-500" />
+                        </div>
+                        <div class="flex-1 min-w-0">
+                          <div class="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                            <p class="font-bold text-[#333] text-sm sm:text-base truncate">
                               {{ comment.username }}
                             </p>
                             <p class="text-xs text-slate-500">
                               {{ formatDate(comment.createdAt) }}
                             </p>
                           </div>
+                          <p class="text-sm sm:text-base text-slate-600 break-words">
+                            {{ comment.content }}
+                          </p>
+                          <div class="flex flex-wrap items-center gap-1 mt-1.5 -ml-2">
+                            <button
+                              v-if="authStore.isAuthenticated"
+                              @click="startReply(item, comment, comment)"
+                              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[#00733f] hover:bg-[#00733f]/10 transition-colors"
+                              title="Reply to this comment"
+                            >
+                              <Reply class="w-4 h-4" />
+                              <span class="text-xs font-semibold">Reply</span>
+                            </button>
+                            <button
+                              v-if="canDeleteComment(comment.userId)"
+                              @click="toggleEditComment(item, comment.id, comment.content)"
+                              :disabled="addingCommentItemId === item.id"
+                              :class="[
+                                'inline-flex items-center gap-1 px-2 py-1 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
+                                isEditingComment(item.id, comment.id)
+                                  ? 'text-slate-700 hover:bg-slate-100'
+                                  : 'text-amber-700 hover:bg-amber-50',
+                              ]"
+                              :title="isEditingComment(item.id, comment.id) ? 'Cancel editing' : 'Edit your comment'"
+                            >
+                              <Pencil class="w-4 h-4" />
+                              <span class="text-xs font-semibold">{{
+                                isEditingComment(item.id, comment.id) ? "Cancel" : "Edit"
+                              }}</span>
+                            </button>
+                            <button
+                              v-if="canDeleteComment(comment.userId)"
+                              @click="handleDeleteComment(item, comment.id)"
+                              :disabled="deletingCommentId === comment.id"
+                              class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              title="Delete your comment and its replies"
+                            >
+                              <Trash2 class="w-4 h-4" />
+                              <span class="text-xs font-semibold">Delete</span>
+                            </button>
+                          </div>
                         </div>
-                        <p
-                          class="text-sm sm:text-base text-slate-500 break-words"
+                      </div>
+
+                      <!-- Replies -->
+                      <div
+                        v-if="repliesOf(item, comment.id).length"
+                        class="ml-8 sm:ml-12 flex flex-col gap-2"
+                      >
+                        <button
+                          v-if="!isThreadOpen(comment.id)"
+                          @click="openThread(comment.id)"
+                          class="self-start inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-slate-500 hover:text-[#00733f] transition-colors"
                         >
-                          {{ comment.content }}
-                          <button
-                            v-if="canDeleteComment(comment.userId)"
-                            @click="
-                              toggleEditComment(
-                                item,
-                                comment.id,
-                                comment.content,
-                              )
-                            "
-                            :disabled="addingCommentItemId === item.id"
-                            :class="[
-                              'ml-2 inline-flex items-center gap-1 px-2 py-1 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors',
-                              isEditingComment(item.id, comment.id)
-                                ? 'text-slate-700 hover:bg-slate-100'
-                                : 'text-amber-700 hover:bg-amber-50',
-                            ]"
-                            :title="
-                              isEditingComment(item.id, comment.id)
-                                ? 'Cancel editing'
-                                : 'Edit your comment'
+                          <CornerDownRight class="w-4 h-4" />
+                          View {{ repliesOf(item, comment.id).length }}
+                          {{ repliesOf(item, comment.id).length === 1 ? "reply" : "replies" }}
+                        </button>
+                        <template v-else>
+                          <div
+                            v-for="reply in repliesOf(item, comment.id)"
+                            :key="reply.id"
+                            :id="`comment-${reply.id}`"
+                            class="flex gap-2 p-2.5 sm:p-3 bg-white/60 rounded-xl border transition-all duration-500"
+                            :class="
+                              highlightCommentId === reply.id
+                                ? 'border-[#00733f] ring-4 ring-[#00733f]/20'
+                                : 'border-slate-200/50'
                             "
                           >
-                            <Pencil class="w-4 h-4" />
-                            <span class="text-xs font-semibold">{{
-                              isEditingComment(item.id, comment.id)
-                                ? "Cancel"
-                                : "Edit"
-                            }}</span>
+                            <div
+                              class="w-7 h-7 sm:w-8 sm:h-8 bg-gradient-to-br from-gray-500/10 to-gray-500/20 rounded-lg flex items-center justify-center flex-shrink-0"
+                            >
+                              <User class="w-3 h-3 text-slate-500" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                              <div class="flex flex-wrap items-center gap-1 sm:gap-2 mb-0.5">
+                                <p class="font-bold text-[#333] text-sm truncate">
+                                  {{ reply.username }}
+                                </p>
+                                <p class="text-xs text-slate-500">
+                                  {{ formatDate(reply.createdAt) }}
+                                </p>
+                              </div>
+                              <p class="text-sm text-slate-600 break-words">
+                                <span
+                                  v-if="showMention(reply, comment)"
+                                  class="font-bold text-[#00733f]"
+                                  >@{{ reply.replyToUsername }}</span
+                                >
+                                {{ reply.content }}
+                              </p>
+                              <div class="flex flex-wrap items-center gap-1 mt-1 -ml-2">
+                                <button
+                                  v-if="authStore.isAuthenticated"
+                                  @click="startReply(item, comment, reply)"
+                                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[#00733f] hover:bg-[#00733f]/10 transition-colors"
+                                >
+                                  <Reply class="w-3.5 h-3.5" />
+                                  <span class="text-xs font-semibold">Reply</span>
+                                </button>
+                                <button
+                                  v-if="canDeleteComment(reply.userId)"
+                                  @click="toggleEditComment(item, reply.id, reply.content)"
+                                  :disabled="addingCommentItemId === item.id"
+                                  :class="[
+                                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-lg disabled:opacity-50 transition-colors',
+                                    isEditingComment(item.id, reply.id)
+                                      ? 'text-slate-700 hover:bg-slate-100'
+                                      : 'text-amber-700 hover:bg-amber-50',
+                                  ]"
+                                >
+                                  <Pencil class="w-3.5 h-3.5" />
+                                  <span class="text-xs font-semibold">{{
+                                    isEditingComment(item.id, reply.id) ? "Cancel" : "Edit"
+                                  }}</span>
+                                </button>
+                                <button
+                                  v-if="canDeleteComment(reply.userId)"
+                                  @click="handleDeleteComment(item, reply.id)"
+                                  :disabled="deletingCommentId === reply.id"
+                                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                                >
+                                  <Trash2 class="w-3.5 h-3.5" />
+                                  <span class="text-xs font-semibold">Delete</span>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            @click="closeThread(comment.id)"
+                            class="self-start text-xs font-bold text-slate-400 hover:text-slate-600 ml-1"
+                          >
+                            Hide replies
                           </button>
+                        </template>
+                      </div>
+
+                      <!-- Inline reply box -->
+                      <div
+                        v-if="replyTarget && replyTarget.itemId === item.id && replyTarget.threadId === comment.id"
+                        class="ml-8 sm:ml-12 flex flex-col gap-1.5"
+                      >
+                        <p class="text-xs text-slate-500 flex items-center gap-1">
+                          Replying to
+                          <b class="text-[#00733f]">@{{ replyTarget.username }}</b>
                           <button
-                            v-if="canDeleteComment(comment.userId)"
-                            @click="handleDeleteComment(item, comment.id)"
-                            :disabled="deletingCommentId === comment.id"
-                            class="ml-1 inline-flex items-center gap-1 px-2 py-1 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Delete your comment"
+                            @click="cancelReply"
+                            class="ml-1 text-slate-400 hover:text-slate-600"
+                            aria-label="Cancel reply"
                           >
-                            <Trash2 class="w-4 h-4" />
-                            <span class="text-xs font-semibold">Delete</span>
+                            <X class="w-3.5 h-3.5" />
                           </button>
                         </p>
+                        <div class="flex gap-2">
+                          <input
+                            :id="`reply-input-${item.id}`"
+                            v-model="replyText"
+                            @keyup.enter="submitReply(item)"
+                            @keyup.esc="cancelReply"
+                            :disabled="sendingReply"
+                            type="text"
+                            maxlength="2000"
+                            :placeholder="`Reply to ${replyTarget.username}…`"
+                            aria-label="Write a reply"
+                            class="flex-1 px-3 py-2 border-2 border-slate-200 rounded-xl bg-white text-[#333] text-sm focus:outline-none focus:border-[#00733f] focus:ring-4 focus:ring-[#00733f]/10 disabled:opacity-50"
+                          />
+                          <button
+                            @click="submitReply(item)"
+                            :disabled="!replyText.trim() || sendingReply"
+                            class="px-4 py-2 bg-gradient-to-r from-[#00733f] to-[#a7d49b] text-white text-sm font-bold rounded-xl disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1"
+                          >
+                            <Send class="w-3.5 h-3.5" />
+                            {{ sendingReply ? "Sending" : "Reply" }}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -435,8 +611,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import NotificationBell from "@/components/NotificationBell.vue";
+import type { Comment } from "@/types/item";
 import { useAuthStore } from "@/stores/auth";
 import {
   addLike,
@@ -448,7 +626,8 @@ import {
   removeLike,
   updateComment,
 } from "@/api/items";
-import type { Item, ExtendedItem } from "@/types/item";
+import type { Item, ExtendedItem, ItemStatus } from "@/types/item";
+import { useChatStore } from "@/stores/chat";
 import {
   Package,
   Heart,
@@ -461,10 +640,17 @@ import {
   Pencil,
   Trash2,
   User,
+  MessagesSquare,
+  Reply,
+  CornerDownRight,
+  X,
 } from "lucide-vue-next";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+const chatStore = useChatStore();
+const startingChatItemId = ref<number | null>(null);
 const loading = ref(true);
 const errorToast = ref("");
 const addingCommentItemId = ref<number | null>(null);
@@ -518,10 +704,149 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+  // Opened from a notification? Jump to that item/comment.
+  await focusFromQuery();
 });
 
+// ------------------------------------------------------------ replies (Facebook-style)
+
+/** The comment the user clicked "Reply" on, and the thread it belongs to. */
+const replyTarget = ref<{
+  itemId: number;
+  threadId: number;
+  commentId: number;
+  username: string;
+} | null>(null);
+const replyText = ref("");
+const sendingReply = ref(false);
+const openThreads = ref(new Set<number>());
+const highlightCommentId = ref<number | null>(null);
+
+function topLevelComments(item: ExtendedItem): Comment[] {
+  return (item.comments || []).filter((c) => !c.parentId);
+}
+
+function repliesOf(item: ExtendedItem, threadId: number): Comment[] {
+  return (item.comments || [])
+    .filter((c) => c.parentId === threadId)
+    .sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+}
+
+function isThreadOpen(threadId: number) {
+  return openThreads.value.has(threadId);
+}
+function openThread(threadId: number) {
+  openThreads.value.add(threadId);
+}
+function closeThread(threadId: number) {
+  openThreads.value.delete(threadId);
+}
+
+/** Show "@name" only when replying to someone other than the thread starter. */
+function showMention(reply: Comment, thread: Comment) {
+  return !!reply.replyToUsername && reply.replyToUserId !== thread.userId;
+}
+
+function startReply(item: ExtendedItem, thread: Comment, target: Comment) {
+  if (!authStore.isAuthenticated) {
+    openAuthModal();
+    return;
+  }
+  replyTarget.value = {
+    itemId: item.id,
+    threadId: thread.id,
+    commentId: target.id,
+    username: target.username,
+  };
+  replyText.value = "";
+  openThread(thread.id);
+  nextTick(() =>
+    (document.getElementById(`reply-input-${item.id}`) as HTMLInputElement | null)?.focus(),
+  );
+}
+
+function cancelReply() {
+  replyTarget.value = null;
+  replyText.value = "";
+}
+
+async function submitReply(item: ExtendedItem) {
+  const text = replyText.value.trim();
+  const target = replyTarget.value;
+  if (!text || !target || sendingReply.value || !authStore.token) return;
+  sendingReply.value = true;
+  try {
+    const created = await postComment(item.id, text, authStore.token, target.commentId);
+    item.comments = [...(item.comments || []), created];
+    item.commentCount = item.comments.length;
+    if (created.parentId) openThread(created.parentId);
+    cancelReply();
+    flashComment(created.id);
+  } catch {
+    errorToast.value = "Failed to post reply";
+    setTimeout(() => (errorToast.value = ""), 3000);
+  } finally {
+    sendingReply.value = false;
+  }
+}
+
+function flashComment(commentId: number) {
+  highlightCommentId.value = commentId;
+  setTimeout(() => {
+    if (highlightCommentId.value === commentId) highlightCommentId.value = null;
+  }, 2500);
+}
+
+async function loadComments(item: ExtendedItem) {
+  item.comments = await getComments(item.id, authStore.token!);
+  item.commentCount = item.comments.length;
+  item.commentsLoaded = true;
+}
+
+/** Handles ?item=ID&comment=ID links coming from notifications. */
+async function focusFromQuery() {
+  const itemId = Number(route.query.item);
+  if (!itemId || !authStore.token) return;
+  const commentId = Number(route.query.comment) || null;
+  router.replace({ name: "Marketplace" }); // so the same link works again later
+
+  const item = items.value.find((i) => i.id === itemId);
+  if (!item) {
+    errorToast.value = "That item is no longer available.";
+    setTimeout(() => (errorToast.value = ""), 3000);
+    return;
+  }
+  try {
+    await loadComments(item); // always fresh, so the new reply is there
+  } catch {
+    /* comments stay as they were */
+  }
+  item.showComments = true;
+
+  const comment = commentId
+    ? (item.comments || []).find((c) => c.id === commentId)
+    : null;
+  if (comment?.parentId) openThread(comment.parentId);
+  await nextTick();
+  const el =
+    (comment && document.getElementById(`comment-${comment.id}`)) ||
+    document.getElementById(`item-${item.id}`);
+  el?.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (comment) flashComment(comment.id);
+}
+
+// Clicking a notification while already on the Marketplace.
+watch(
+  () => route.query.item,
+  (itemId) => {
+    if (itemId && !loading.value) focusFromQuery();
+  },
+);
+
 function openAuthModal() {
-  router.push({ name: "home", query: { modal: "login" } });
+  router.push({ name: "Home", query: { modal: "login" } });
 }
 
 async function handleLike(item: ExtendedItem) {
@@ -685,10 +1010,18 @@ async function handleDeleteComment(item: ExtendedItem, commentId: number) {
   deletingCommentId.value = commentId;
   try {
     await deleteComment(commentId, authStore.token);
+    // Deleting a comment also removes its replies (the backend does the same).
     item.comments = (item.comments || []).filter(
-      (comment) => comment.id !== commentId,
+      (comment) => comment.id !== commentId && comment.parentId !== commentId,
     );
-    item.commentCount = Math.max(0, item.commentCount - 1);
+    item.commentCount = item.comments.length;
+    if (
+      replyTarget.value &&
+      (replyTarget.value.commentId === commentId ||
+        replyTarget.value.threadId === commentId)
+    ) {
+      cancelReply();
+    }
 
     if (editingCommentId.value === commentId) {
       editingCommentId.value = null;
@@ -705,22 +1038,40 @@ async function handleDeleteComment(item: ExtendedItem, commentId: number) {
   }
 }
 
-function contactSeller(item: ExtendedItem) {
+/** Live status: socket updates from the chat store override the loaded value. */
+function statusOf(item: ExtendedItem): ItemStatus {
+  return chatStore.itemStatusOverrides[item.id]?.status ?? item.status;
+}
+
+/** First letter of the user's name (or username) for the header avatar. */
+const profileInitial = computed(() => {
+  const u = authStore.user;
+  const name = u?.firstName || u?.username || "";
+  return name ? name.charAt(0).toUpperCase() : "?";
+});
+
+function isOwnItem(item: ExtendedItem) {
+  return !!authStore.user && item.user?.id === authStore.user.id;
+}
+
+async function messageOwner(item: ExtendedItem) {
   if (!authStore.isAuthenticated) {
     openAuthModal();
     return;
   }
 
-  const sellerInfo = `${item.user.username} (${item.user.email}) - ${item.title}`;
-  navigator.clipboard
-    .writeText(sellerInfo)
-    .then(() => {
-      const emailLink = `mailto:${item.user.email}?subject=GAWT: ${item.title}&body=Hi, interested in your ${item.title} listing!`;
-      window.open(emailLink, "_blank");
-    })
-    .catch(() => {
-      alert(`Contact: ${sellerInfo}\nEmail: ${item.user.email}`);
-    });
+  startingChatItemId.value = item.id;
+  try {
+    const conversation = await chatStore.startWithItem(item.id);
+    router.push({ name: "Chats", params: { id: conversation.id } });
+  } catch (error: any) {
+    errorToast.value = error?.message || "Could not open chat.";
+    setTimeout(() => {
+      errorToast.value = "";
+    }, 3000);
+  } finally {
+    startingChatItemId.value = null;
+  }
 }
 
 function formatDate(dateString: string) {

@@ -9,7 +9,9 @@ import type {
   User,
 } from "@/types/auth";
 
-const API_BASE_URL = "http://localhost:8081/api";
+import { API_URL } from "./config";
+
+const API_BASE_URL = `${API_URL}/api`;
 
 class AuthService {
   private api: AxiosInstance;
