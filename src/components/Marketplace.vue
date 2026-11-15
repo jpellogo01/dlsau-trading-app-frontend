@@ -904,12 +904,13 @@ async function addComment(item: ExtendedItem) {
 
   addingCommentItemId.value = item.id;
   try {
+    const editingId = editingCommentId.value;
     const isEditingCurrentItem =
-      editingCommentItemId.value === item.id && editingCommentId.value !== null;
+      editingCommentItemId.value === item.id && editingId !== null;
 
     if (isEditingCurrentItem) {
       const updatedComment = await updateComment(
-        editingCommentId.value,
+        editingId,
         commentText,
         authStore.token!,
       );

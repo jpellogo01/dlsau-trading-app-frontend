@@ -62,10 +62,9 @@ function navigateTo(page: string): void {
   window.location.href = targetUrl;
 }
 
-// Export for module usage (if using import)
-if (typeof module !== "undefined" && module.exports) {
-  module.exports = { navigateTo, isAuthenticated };
-}
+// Export for module usage (ES modules; the old CommonJS `module.exports`
+// check broke the production type-check)
+export { navigateTo, isAuthenticated };
 
 // Expose globally for direct script usage
 (window as any).navigateTo = navigateTo;
