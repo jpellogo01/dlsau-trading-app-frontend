@@ -102,8 +102,8 @@
                     <option value="Academic">Academic Gear</option>
                     <option value="Academic">School Supplies</option>
                     <option value="Electronics">Electronics</option>
-                    <option value="Fashion">Fashion/Uniforms</option></select
-                  >cd
+                    <option value="Fashion">Fashion/Uniforms</option>
+                  </select>
                 </div>
                 <div>
                   <label
